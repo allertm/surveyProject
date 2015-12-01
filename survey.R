@@ -11,54 +11,50 @@ download.file ("http://files.figshare.com/2236372/combined.csv","Data/portal_dat
 # load file
 surveys <- read.csv('Data/portal_data_joined.csv')
 
-## data anlaysis ideas 
+## data anlaysis 
 
-## species_id vs year vs weight 
-
-# Mutate weight to kg
-surveys %>%
-  mutate(weight_kg = weight / 1000) %>% # convert to kg and add in column
-  filter(!is.na(weight)) %>%
-  head
+# species_id vs year vs weight 
 
 # data parsing
 data1 <- surveys %>%
-  group_by(species_id, year) %>%
+  group_by(species_id, year, sex) %>%
   summarize(mean_weight = mean(weight, na.rm = TRUE)) %>%
-  filter(!is.na(mean_weight)) 
+  filter(!is.na(mean_weight)) %>%
+  filter(sex == "M")
   
-#filtered_d1.2 <- data1 %>%
-  #mutate(mean_weight_kg = mean_weight / 1000) %>% # convert to kg and add in column
-  #filter(!is.na(mean_weight)) %>%
-  #head
-
-# build figure
-ggplot(data = data1, aes(x = year, y = mean_weight, group = species_id, color = species_id)) + geom_line()
+# graph (distribution)
+ggplot(data = data1, aes(x = year, y = mean_weight, group = species_id, color = species_id)) + geom_line() + annotate("text", x = 1990, y = 225, label = "Mean weight of all male species from 1977 to 2002") + theme_bw()
 ggsave("Rproject1.pdf")
 
-# species_id vs month vs weight (only include males, females could be pregnant and bias the data)
-
+# species_id vs year vs hindfoot_length (only include females)
 data2 <- surveys %>%
-  group_by(species_id, month, sex) %>%
-  summarize(mean_weight = mean(weight, na.rm = TRUE)) %>%
-  filter(!is.na(mean_weight), sex == "M") %>%
-  head
-?"dplyr-package"
+  group_by(species_id, hindfoot_length, year, sex) %>%
+  summarize(mean_hindfoot_length = mean(hindfoot_length, na.rm = TRUE)) %>%
+  filter(sex == "F", species_id == "BA")
+## statisical test 
+# ANOVA
+fml <- aov(year~hindfoot_length, data=data2)
+anova(fml)
+# p- value= 0.714
 
+## graph (comparison)
+# load data  
+f <- data.frame(Year = c("1990", "1991", "1992"), mean_hindfoot_length = c (14, 12.1667, 13.5)) 
+# basic layers and graph options
+m <- ggplot(f, aes(y = mean_hindfoot_length))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+# Exectuting the graph
+m + geom_bar(aes(x = Year, color = Year), stat = "identity") + theme_bw() + annotate("text", x = 2, y = 18, label = "Mean Hindfoot Length of Female Baiomys taylori")+ annotate ("text", x = 1, y = 15, label = "p = 0.714")
+ggsave("RProject2.pdf")
+
+
+# weight vs speceis vs hindfoot length, male only 
+# data parsing
 data3 <- surveys %>%
-  group_by(species_id, month, sex, weight) %>%
-  filter(sex == "M", !is.na(weight)) %>%
-  head
+  group_by(weight, species_id, hindfoot_length, sex) %>%
+  filter( sex == "M") 
+# graph (relationship)
+ggplot(data = data3, aes(x = hindfoot_length, y = weight, color = species_id)) + geom_point() + annotate("text", x = 30, y = 325, label = "Comparing hindfoot length and weight for males from 1977 to 2002") + theme_bw() 
+ggsave("RProject3.pdf")
 
-
-
-
-
-# weight vs speceis vs hindfoot length (comparison)
-
-
-
-# sex vs hindfoot length vs species(distribution)
-# speceis vs year vs sex (distribution)
 
 
